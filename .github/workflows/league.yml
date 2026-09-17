@@ -1,0 +1,47 @@
+name: League Early Clips
+on:
+  schedule:
+    - cron: '15 */4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install requests
+
+      - name: Run bot
+        env:
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+          TELEGRAM_BOT_TOKEN_LOL: ${{ secrets.TELEGRAM_BOT_TOKEN_LOL }}
+          TELEGRAM_CHAT_ID_LOL: ${{ secrets.TELEGRAM_CHAT_ID_LOL }}
+          TELEGRAM_BOT_TOKEN_VAL: ${{ secrets.TELEGRAM_BOT_TOKEN_VAL }}
+          TELEGRAM_CHAT_ID_VAL: ${{ secrets.TELEGRAM_CHAT_ID_VAL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python bot_lol.py
+
+      - name: Save queue
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@bot.com"
+          git pull --rebase || true
+          touch sent_ids_lol.txt pending_clips_lol.json
+          git add sent_ids_lol.txt pending_clips_lol.json
+          git commit -m "update queue lol v1.0" || echo "nothing to commit"
+          git push
+          
